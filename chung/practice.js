@@ -44,7 +44,13 @@ function chuan(s){ s=String(s||"").toLowerCase().replace(/[’‘`´]/g,"'").rep
 const khop=(s,ds)=>ds.some(d=>chuan(d)===chuan(s));
 
 /* nhãn chấm */
-function fbHtml(ok,dap,giai){ return `<div class="fb ${ok?"ok":"no"}"><span class="kq">${ok?"✓ Correct!":"✗ Incorrect"}</span>${!ok&&dap!=null?` – Answer: <b>${dap}</b>`:""}${giai?`<div class="giai">💡 ${giai}</div>`:""}</div>`; }
+/* bấm từ (chung/bam-tu.js): chỉ bọc vùng đọc – lời giải, đáp án, kết quả, bài đọc, bài mẫu (class "bt") – không bọc nút, chữ cái, ô chữ */
+const VUNG_BAM=".fb,.giai,.chi-tiet,.mau,.bt";
+const bocTu=el=>{ try{ if(el&&window.BamTu) BamTu.boc(el); }catch(e){} };
+function theoDoiBam(r){ if(!window.BamTu||!window.MutationObserver) return;
+  new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(nd=>{ if(nd.nodeType!==1||nd.classList.contains("tu")) return;
+    if(nd.matches(VUNG_BAM)) bocTu(nd); else nd.querySelectorAll(VUNG_BAM).forEach(bocTu); }))).observe(r,{childList:true,subtree:true}); }
+function fbHtml(ok,dap,giai){ return `<div class="fb ${ok?"ok":"no"}"><span class="kq">${ok?"✓ Correct!":"✗ Incorrect"}</span>${!ok&&dap!=null?` – Answer: <b${/<u>/.test(dap)?' class="khong-boc"':""}>${dap}</b>`:""}${giai?`<div class="giai">💡 ${giai}</div>`:""}</div>`; }
 
 /* ---------- trang chủ Practice ---------- */
 function veTrangChu(){
@@ -68,7 +74,7 @@ function khung(n){
   <main><div class="pt-bar"><button class="pt-back">← 20 dạng bài</button><span class="sao">Sao cao nhất: ${veSao(st.sao[n]||0)}</span></div>
   <div class="pt-prog"><div></div></div><div class="pt-dem"></div><div id="man"></div></main>`;
   app.querySelector(".pt-back").onclick=()=>{ location.hash=""; };
-  man=app.querySelector("#man"); scrollTo(0,0);
+  man=app.querySelector("#man"); scrollTo(0,0); theoDoiBam(man);
 }
 const tienDo=(i,t,chu)=>{ const b=app.querySelector(".pt-prog div"); if(b) b.style.width=(t?Math.round(i/t*100):0)+"%"; const d=app.querySelector(".pt-dem"); if(d) d.textContent=chu||(t?`Câu ${Math.min(i+1,t)}/${t}`:""); };
 
@@ -307,16 +313,16 @@ D[15]=n=>{ const O=P.d15; tienDo(0,1,`${O.dap.length} chỗ trống`);
   const box=mk("div","card"); man.appendChild(box); box.innerHTML=`<p class="hd">Bấm chỗ trống (đang tô vàng), rồi bấm từ trong khung để điền. Bấm lại chỗ đã điền để đổi. Khung có ${O.tu.length-O.dap.length} từ thừa.</p>`;
   const lua=O.tu.slice(), dap=O.dap.map(w=>lua.indexOf(w));
   dienTrong(box,taoGap=>{ const p=mk("div","doan"); if(O.tieu) box.appendChild(mk("h3","",E(O.tieu)));
-    O.doan.split(/(\{\d+\})/).forEach(part=>{ const m=part.match(/^\{(\d+)\}$/); if(m) p.appendChild(taoGap(+m[1]-1)); else p.appendChild(document.createTextNode(part)); }); box.appendChild(p); },
+    O.doan.split(/(\{\d+\})/).forEach(part=>{ const m=part.match(/^\{(\d+)\}$/); if(m) p.appendChild(taoGap(+m[1]-1)); else p.appendChild(document.createTextNode(part)); }); box.appendChild(p); bocTu(p); },
     lua,dap,O.giai,(d,t,ct,sai)=>{ sai.forEach(i=>ghiSai(`15-${i+1}`)); ketThuc(n,d,t,ct,true); });
 };
 
 /* 16. Đọc hiểu True / False */
 D[16]=n=>{ const O=P.d16, Q=tron(O.cau.map((q,i)=>i)); tienDo(0,Q.length,`${Q.length} câu`);
   const box=mk("div","card"); man.appendChild(box);
-  box.innerHTML=`<p class="hd">Đọc đoạn văn, rồi chọn <b>True</b> (đúng với bài) hoặc <b>False</b> (sai với bài) cho mỗi câu.</p>${O.tieu?`<h3 style="margin:4px 0 8px">${E(O.tieu)}</h3>`:""}${O.anh?`<img class="anh" src="${E(O.anh)}" alt="">`:""}${O.doan.map(p=>`<p class="para">${E(p)}</p>`).join("")}`;
+  box.innerHTML=`<p class="hd">Đọc đoạn văn, rồi chọn <b>True</b> (đúng với bài) hoặc <b>False</b> (sai với bài) cho mỗi câu.</p>${O.tieu?`<h3 style="margin:4px 0 8px">${E(O.tieu)}</h3>`:""}${O.anh?`<img class="anh" src="${E(O.anh)}" alt="">`:""}${O.doan.map(p=>`<p class="para bt">${E(p)}</p>`).join("")}`;
   let xongSo=0, d=0;
-  Q.forEach((qi,k)=>{ const q=O.cau[qi]; const c=mk("div","tf",`<div class="q"><b>${k+1}.</b> ${E(q.h)}</div><div class="opts"><button class="opt">True</button><button class="opt">False</button></div>`); box.appendChild(c);
+  Q.forEach((qi,k)=>{ const q=O.cau[qi]; const c=mk("div","tf",`<div class="q bt"><b>${k+1}.</b> ${E(q.h)}</div><div class="opts"><button class="opt">True</button><button class="opt">False</button></div>`); box.appendChild(c);
     const [t,f]=c.querySelectorAll(".opt"); [t,f].forEach((b,j)=>b.onclick=()=>{ if(c.dataset.xong) return; c.dataset.xong=1; const chon=j===0, ok=chon===q.d; b.classList.add(ok?"right":"wrong"); (q.d?t:f).classList.add("right");
       c.insertAdjacentHTML("beforeend",fbHtml(ok,q.d?"True":"False",q.g)); if(ok) d++; else ghiSai(`16-${qi+1}`); xongSo++; tienDo(xongSo,Q.length,`Đã làm ${xongSo}/${Q.length}`);
       if(xongSo===Q.length) ketThuc(n,d,Q.length,"",true); }); });
@@ -328,7 +334,7 @@ D[17]=n=>{ const O=P.d17; tienDo(0,1,`${O.dap.length} chỗ trống`);
   const ten=[...new Set(O.luot.map(l=>l[0]))];
   dienTrong(box,taoGap=>{ const ht=mk("div","ht"); O.luot.forEach(([ai,cau])=>{ const l=mk("div","ht-l",`<span class="ai${ten.indexOf(ai)%2?" b":""}">${E(ai)}:</span>`); const nd=mk("span","noi-dung");
       cau.split(/(\{\d+\})/).forEach(part=>{ const m=part.match(/^\{(\d+)\}$/); if(m) nd.appendChild(taoGap(+m[1]-1)); else if(part) nd.appendChild(document.createTextNode(part)); }); l.appendChild(nd); ht.appendChild(l); }); box.appendChild(ht); },
-    O.lua,O.dap,O.giai,(d,t,ct,sai)=>{ sai.forEach(i=>ghiSai(`17-${i+1}`)); ketThuc(n,d,t,ct,true); },true);
+    O.lua,O.dap,O.giai,(d,t,ct,sai)=>{ sai.forEach(i=>ghiSai(`17-${i+1}`)); bocTu(box.querySelector(".ht")); ketThuc(n,d,t,ct,true); },true);
 };
 
 /* 18. Nối câu hỏi – câu trả lời */
@@ -349,8 +355,8 @@ D[18]=n=>{ const Q=P.d18, qo=tron(Q.map((q,i)=>i)), ao=tron(Q.map((q,i)=>i)), L=
 D[19]=n=>{ const O=P.d19; tienDo(0,1,`${O.min}–${O.max} từ`);
   const box=mk("div","card"); man.appendChild(box);
   const nhapCu=(()=>{ try{ return localStorage.getItem(KEY+":viet")||""; }catch(e){ return ""; } })();
-  box.innerHTML=`<div class="hoi" style="font-size:19px">${E(O.de)}</div><p class="hd">${E(O.de_vi||"")}</p>
-   <details class="goi" open><summary>💡 Gợi ý (trả lời các câu hỏi này)</summary><ul style="margin:8px 0 0;padding-left:20px">${O.goi.map(g=>`<li>${E(g)}</li>`).join("")}</ul>
+  box.innerHTML=`<div class="hoi bt" style="font-size:19px">${E(O.de)}</div><p class="hd">${E(O.de_vi||"")}</p>
+   <details class="goi" open><summary>💡 Gợi ý (trả lời các câu hỏi này)</summary><ul class="bt" style="margin:8px 0 0;padding-left:20px">${O.goi.map(g=>`<li>${E(g)}</li>`).join("")}</ul>
    <div style="margin-top:8px;font-size:15px"><b>Từ nên dùng:</b> ${O.tu_khoa.map(E).join(", ")}<br><b>Ngữ pháp Unit:</b> ${O.ngu_phap.map(E).join(", ")}</div></details>
    <textarea class="go" placeholder="Em viết đoạn văn ở đây…" spellcheck="false" autocapitalize="sentences"></textarea><div class="dem-tu">0 từ</div>
    <div class="right-row"><button class="btn ghost xm">📄 Xem bài mẫu</button><button class="btn cb">Chấm bài</button></div><div class="kq19"></div><div class="mau19"></div>`;
