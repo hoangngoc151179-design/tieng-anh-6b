@@ -193,3 +193,6 @@ textarea.van{width:100%;min-height:200px;font:inherit;font-size:17px;line-height
 
 /* Điện thoại: kéo khung trong ra sát mép hơn nữa (Sếp góp ý 27/10/2026) */
 @media (max-width:600px){header{padding:10px 8px}.steps{padding:8px 4px}.line{padding:6px 4px;gap:6px}.q{padding:10px 6px}.opt{padding:8px 10px}.box{padding:6px 4px}.giang{padding:10px 8px}.memo{padding:8px 6px}.vw{padding:6px 6px}.sub-card{padding:8px 4px}.tile{padding:12px 10px;gap:10px}.bai{padding:10px 6px}.steps,.giang,.q{margin-left:0;margin-right:0}}
+
+/* Điện thoại: gọn khoảng trống dọc (Sếp góp ý 27/10/2026) */
+@media (max-width:600px){.giang{margin-bottom:8px}.q{margin-bottom:6px}.q .qt{margin-bottom:6px}.sub-card{margin-top:8px}.memo{margin:6px 0}}
